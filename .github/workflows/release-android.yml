@@ -1,0 +1,51 @@
+name: Release Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v3.0.0)'
+        required: true
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-android.yml
+    secrets: inherit
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: maid-android-*
+          path: release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: Maid ${{ github.event.inputs.tag }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          generate_release_notes: true
+          files: |
+            release/maid-android-arm64-v8a/maid-android-arm64-v8a.apk
+            release/maid-android-x86_64/maid-android-x86_64.apk
+            release/maid-android-universal/maid-android-universal.apk
+            release/maid-android-bundle/maid-android-bundle.aab
+            release/maid-android-arm64-v8a-no-hexagon/maid-android-arm64-v8a-no-hexagon.apk
+            release/maid-android-x86_64-no-hexagon/maid-android-x86_64-no-hexagon.apk
+            release/maid-android-universal-no-hexagon/maid-android-universal-no-hexagon.apk
+            release/maid-android-bundle-no-hexagon/maid-android-bundle-no-hexagon.aab
